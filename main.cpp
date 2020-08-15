@@ -51,7 +51,7 @@ enum
     FL_NEG = 1 << 2,
 };
 
-int main(void)
+int main(int argc, char** argv)
 {
     if (argc < 2)
     {
@@ -145,8 +145,10 @@ int main(void)
             }
             break;
         case OP_LD:
-            reg[instr >> 9 & 0x7] =
+            uint16_t dr = instr >> 9 & 0x7;
+            reg[dr] =
                 mem_read(reg[R_PC] + sign_extend(instr & 0x1FF, 9));
+            update_flags(dr);
             break;
         case OP_LDI:
             uint16_t dr = (instr >> 9) & 0x7;
@@ -155,14 +157,33 @@ int main(void)
             update_flags(dr);
             break;
         case OP_LDR:
+            uint16_t dr = instr >> 9 & 0x7;
+            uint16_t sr = instr >> 6 & 0x7;
+            uint16_t offset = sign_extend(instr & 0x3F, 6)
+            reg[dr] = mem_read(reg[sr] + offset);
+            update_flags(dr);
             break;
         case OP_LEA:
+            uint16_t dr = instr >> 9 & 0x7;
+            uint16_t offset = sign_extend(instr & 0x1FF, 9);
+            reg[dr] = reg[R_PC] + offset;
+            update_flags(dr);
             break;
         case OP_ST:
+            uint16_t sr = instr >> 9 & 0x7;
+            uint16_t offset = sign_extend(instr & 0x1FF, 9);
+            mem_write(reg[R_PC] + offset, reg[sr]);
             break;
         case OP_STI:
+            uint16_t sr = instr >> 9 & 0x7;
+            uint16_t offset = sign_extend(instr & 0x1FF, 9);
+            mem_write(mem_read(reg[R_PC] + offset, reg[sr]));
             break;
         case OP_STR:
+            uint16_t sr = instr >> 9 & 0x7;
+            uint16_t base = instr >> 6 & 0x7;
+            uint16_t offset = sign_extend(instr & 0x3F, 6);
+            mem_write(reg[base] + offset, reg[sr]);
             break;
         case OP_TRAP:
             break;
