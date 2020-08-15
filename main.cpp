@@ -134,8 +134,19 @@ int main(void)
             reg[R_PC] = reg[instr >> 6 & 0x7];
             break;
         case OP_JSR:
+            reg[R_R7] = reg[R_PC];
+            if (instr >> 11 & 1)
+            {
+                reg[R_PC] += sign_extend(instr & 0x7FF, 11);
+            }
+            else
+            {
+                reg[R_PC] = instr >> 6 & 0x7;
+            }
             break;
         case OP_LD:
+            reg[instr >> 9 & 0x7] =
+                mem_read(reg[R_PC] + sign_extend(instr & 0x1FF, 9));
             break;
         case OP_LDI:
             uint16_t dr = (instr >> 9) & 0x7;
