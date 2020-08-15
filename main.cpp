@@ -98,18 +98,50 @@ int main(void)
             update_flags(dr);
             break;
         case OP_AND:
+            // destination register
+            uint16_t dr = (intr >> 9) & 0x7;
+            // first argument
+            uint16_t a = reg[(intr >> 6) & 0x7];
+            // second argument
+            uint16_t b;
+            if (intr >> 5 & 0x1) /* is bit 5 set? */
+            {
+                // bit 5 is set
+                b = sign_extend(instr & 0x1F, 5);
+            }
+            else
+            {
+                b = reg[instr & 0x7];
+            }
+            reg[dr] = a & b;
+            update_flags(dr);
             break;
         case OP_NOT:
+            uint16_t dr = (instr >> 9) & 0x7;
+            uint16_t sr = (instr >> 6) & 0x7;
+            reg[dr] = ~reg[sr];
+            update_flags(dr);
             break;
         case OP_BR:
+            uint16_t cond_flag = instr >> 9 & 0x7;
+            
+            if (cond_flag & reg[R_COND])
+            {
+                reg[R_PC] += sign_extend(instr & 0x1FF, 9);
+            }
             break;
         case OP_JMP:
+            reg[R_PC] = reg[instr >> 6 & 0x7];
             break;
         case OP_JSR:
             break;
         case OP_LD:
             break;
         case OP_LDI:
+            uint16_t dr = (instr >> 9) & 0x7;
+            uint16 pc_offset = sign_extend(instr & 0x1FF, 9);
+            reg[dr] = mem_read(mem_read(reg[R_PC] + pc_offset));
+            update_flags(dr);
             break;
         case OP_LDR:
             break;
