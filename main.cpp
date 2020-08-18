@@ -124,33 +124,41 @@ int main(int argc, char** argv)
         {
         case OP_ADD:
         {
+            #ifdef DEBUG
+            std::cout << "VM: ADD" << std::endl;
+            #endif
             // destination register
             uint16_t dr = (instr >> 9) & 0x7;
             // first argument
-            uint16_t a = reg[(instr >> 6) & 0x7];
+            uint16_t a = (instr >> 6) & 0x7;
             // second argument
             uint16_t b;
-            if (instr >> 5 & 0x1) /* is bit 5 set? */
+            if ((instr >> 5) & 0x1) /* is bit 5 set? */
             {
                 // bit 5 is set
                 b = sign_extend(instr & 0x1F, 5);
+                reg[dr] = reg[a] + b;
             }
             else
             {
-                b = reg[instr & 0x7];
+                b = instr & 0x7;
+                reg[dr] = reg[a] + reg[b];
             }
-            reg[dr] = a + b;
             update_flags(dr);
         }break;
         case OP_AND:
         {
+            #ifdef DEBUG
+            std::cout << "VM: AND" << std::endl;
+            #endif
+
             // destination register
             uint16_t dr = (instr >> 9) & 0x7;
             // first argument
             uint16_t a = reg[(instr >> 6) & 0x7];
             // second argument
             uint16_t b;
-            if (instr >> 5 & 0x1) /* is bit 5 set? */
+            if ((instr >> 5) & 0x1) /* is bit 5 set? */
             {
                 // bit 5 is set
                 b = sign_extend(instr & 0x1F, 5);
@@ -164,6 +172,10 @@ int main(int argc, char** argv)
         }break;
         case OP_NOT:
         {
+            #ifdef DEBUG
+            std::cout << "VM: NOT" << std::endl;
+            #endif
+
             uint16_t dr = (instr >> 9) & 0x7;
             uint16_t sr = (instr >> 6) & 0x7;
             reg[dr] = ~reg[sr];
@@ -171,7 +183,11 @@ int main(int argc, char** argv)
         }break;
         case OP_BR:
         {
-            uint16_t cond_flag = instr >> 9 & 0x7;
+            #ifdef DEBUG
+            std::cout << "VM: BR" << std::endl;
+            #endif
+
+            uint16_t cond_flag = (instr >> 9) & 0x7;
             
             if (cond_flag & reg[R_COND])
             {
@@ -180,29 +196,42 @@ int main(int argc, char** argv)
         }break;
         case OP_JMP:
         {
-            reg[R_PC] = reg[instr >> 6 & 0x7];
+            #ifdef DEBUG
+            std::cout << "VM: JMP" << std::endl;
+            #endif
+
+            reg[R_PC] = reg[(instr >> 6) & 0x7];
         }break;
         case OP_JSR:
         {
+            #ifdef DEBUG
+            std::cout << "VM: JSR" << std::endl;
+            #endif
             reg[R_R7] = reg[R_PC];
-            if (instr >> 11 & 1)
+            if ((instr >> 11) & 1)
             {
                 reg[R_PC] += sign_extend(instr & 0x7FF, 11);
             }
             else
             {
-                reg[R_PC] = instr >> 6 & 0x7;
+                reg[R_PC] = (instr >> 6) & 0x7;
             }
         }break;
         case OP_LD:
         {
-            uint16_t dr = instr >> 9 & 0x7;
+            #ifdef DEBUG
+            std::cout << "VM: LD" << std::endl;
+            #endif
+            uint16_t dr = (instr >> 9) & 0x7;
             reg[dr] =
                 mem_read(reg[R_PC] + sign_extend(instr & 0x1FF, 9));
             update_flags(dr);
         }break;
         case OP_LDI:
         {
+            #ifdef DEBUG
+            std::cout << "VM: LDI" << std::endl;
+            #endif
             uint16_t dr = (instr >> 9) & 0x7;
             uint16_t pc_offset = sign_extend(instr & 0x1FF, 9);
             reg[dr] = mem_read(mem_read(reg[R_PC] + pc_offset));
@@ -210,60 +239,95 @@ int main(int argc, char** argv)
         }break;
         case OP_LDR:
         {
-            uint16_t dr = instr >> 9 & 0x7;
-            uint16_t sr = instr >> 6 & 0x7;
+            #ifdef DEBUG
+            std::cout << "VM: LDR" << std::endl;
+            #endif
+            uint16_t dr = (instr >> 9) & 0x7;
+            uint16_t sr = (instr >> 6) & 0x7;
             uint16_t offset = sign_extend(instr & 0x3F, 6);
             reg[dr] = mem_read(reg[sr] + offset);
             update_flags(dr);
         }break;
         case OP_LEA:
         {
-            uint16_t dr = instr >> 9 & 0x7;
+            #ifdef DEBUG
+            std::cout << "VM: LEA" << std::endl;
+            #endif
+            uint16_t dr = (instr >> 9) & 0x7;
             uint16_t offset = sign_extend(instr & 0x1FF, 9);
             reg[dr] = reg[R_PC] + offset;
             update_flags(dr);
         }break;
         case OP_ST:
         {
-            uint16_t sr = instr >> 9 & 0x7;
+            #ifdef DEBUG
+            std::cout << "VM: ST" << std::endl;
+            #endif
+            uint16_t sr = (instr >> 9) & 0x7;
             uint16_t offset = sign_extend(instr & 0x1FF, 9);
             mem_write(reg[R_PC] + offset, reg[sr]);
         }break;
         case OP_STI:
         {
-            uint16_t sr = instr >> 9 & 0x7;
+            #ifdef DEBUG
+            std::cout << "VM: STI" << std::endl;
+            #endif
+            uint16_t sr = (instr >> 9) & 0x7;
             uint16_t offset = sign_extend(instr & 0x1FF, 9);
             mem_write(mem_read(reg[R_PC] + offset), reg[sr]);
         }break;
         case OP_STR:
         {
-            uint16_t sr = instr >> 9 & 0x7;
-            uint16_t base = instr >> 6 & 0x7;
+            #ifdef DEBUG
+            std::cout << "VM: STR" << std::endl;
+            #endif
+            uint16_t sr = (instr >> 9) & 0x7;
+            uint16_t base = (instr >> 6) & 0x7;
             uint16_t offset = sign_extend(instr & 0x3F, 6);
             mem_write(reg[base] + offset, reg[sr]);
         }break;
         case OP_TRAP:
         {
+            #ifdef DEBUG
+            std::cout << "VM: TRAP" << std::endl;
+            #endif
             switch (instr & 0xFF)
             {
             case TRAP_GETC:
             {
+                #ifdef DEBUG
+                std::cout << "\tVM: TRAP_GETC" << std::endl;
+                #endif
                 char chr;
                 std::cin >> chr;
                 reg[R_R0] = (uint16_t) chr;
             }break;
             case TRAP_OUT:
             {
+                #ifdef DEBUG
+                std::cout << "\tVM: TRAP_OUT" << std::endl;
+                #endif
                 char chr = reg[R_R0] & 0xFF;
                 std::cout << chr;
             }break;
             case TRAP_PUTS:
             {
+                #ifdef DEBUG
+                std::cout << "\tVM: TRAP_PUTS" << std::endl;
+                #endif
                 uint16_t* c = memory + reg[R_R0];
-                std::cout << (char*) c;
+                while (*c)
+                {
+                    std::cout << (char) *c;
+                    c++;
+                }
+                
             }break;
             case TRAP_IN:
             {
+                #ifdef DEBUG
+                std::cout << "\tVM: TRAP_IN" << std::endl;
+                #endif
                 char chr;
                 std::cout << "Enter a character: ";
                 std::cin >> chr;
@@ -272,6 +336,9 @@ int main(int argc, char** argv)
             }break;
             case TRAP_PUTSP:
             {
+                #ifdef DEBUG
+                std::cout << "\tVM: TRAP_PUTSP" << std::endl;
+                #endif
                 uint16_t* c = memory + reg[R_R0];
                 char chr;
                 while(*c)
@@ -285,6 +352,9 @@ int main(int argc, char** argv)
             }break;
             case TRAP_HALT:
             {
+                #ifdef DEBUG
+                std::cout << "\tVM: TRAP_HALT" << std::endl;
+                #endif
                 std::cout << "HALT" << std::endl;
                 running = 0;
             }break;
@@ -296,7 +366,7 @@ int main(int argc, char** argv)
         {}break;
         default:
         {}break;
-        }            
+        }
     }
 }
 
@@ -370,7 +440,7 @@ uint16_t mem_read(uint16_t address)
     {
         if (check_key())
         {
-            memory[MR_KBSR] = 1 << 15;
+            memory[MR_KBSR] = (1 << 15);
             memory[MR_KBDR] = getchar();
         }
         else
